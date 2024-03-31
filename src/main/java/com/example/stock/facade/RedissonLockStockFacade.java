@@ -1,7 +1,6 @@
 package com.example.stock.facade;
 
 import com.example.stock.service.StockService;
-import io.lettuce.core.RedisClient;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
