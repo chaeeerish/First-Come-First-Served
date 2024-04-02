@@ -2,17 +2,17 @@
 (해당 레포지토리는 [아래의 강의](https://www.inflearn.com/course/%EB%8F%99%EC%8B%9C%EC%84%B1%EC%9D%B4%EC%8A%88-%EC%9E%AC%EA%B3%A0%EC%8B%9C%EC%8A%A4%ED%85%9C?)를 수강한 내용을 기반으로 하였습니다.)
 ![img_1.png](image/img_1.png)
 
-### 학습 목표
+### ✔  학습 목표
 - 동시성 이슈가 무엇인가
 - 동시성 이슈를 처리하는 방법
   - Application Level
   - Database Lock
   - Redis Distributed Lock
 
-### 문제
+### ✔  문제
 **쇼핑몰 재고 수량을 update 했는데 원하던 수량이 아니다?**
 
-### 데이터베이스 작업환경 세팅하기
+### ✔  데이터베이스 작업환경 세팅하기
 - 도커 설치하기
 ```
 brew install docker 
@@ -33,7 +33,7 @@ create database stock_example;
 use stock_example;
 ```
 
-### 기본 프로젝트 - Transactional 어노테이션 사용
+### ✔  기본 프로젝트 - Transactional 어노테이션 사용
 StockService.java
 ```java
 @Transactional
@@ -44,7 +44,7 @@ public void decrease(Long id, Long quantity) {
 }
 ```
 
-### 위의 로직의 문제점
+### ✔  위의 로직의 문제점
 - 요청이 동시에 여러 개가 들어오면 재고의 개수가 맞지 않는다.
 - 멀티스레드를 이용하여 테스트 케이스를 작성한다.
 StockServiceTest.java
@@ -76,7 +76,7 @@ public void 동시에_100개의_요청() throws InterruptedException {
 > 레이스 컨디션이란 둘 이상의 Thread 공유 데이터에 액세스 할 수 있고, 동시에 변경을 하려고 할 때 발생하는 문제이다.  
 > 갱신 전의 재고를 가져가서 갱신하기 때문이다.
 
-### 해결 방법1) Synchroinzed 이용하기
+### ✔  해결 방법1) Synchroinzed 이용하기
 - 자바에서 지원하는 방식이다.
 - 해당 메소드는 한 개의 스레드만 접근할 수 있게 된다.
 ```java
@@ -103,7 +103,7 @@ public synchronized void decrease(Long id, Long quantity) {
   - 인스턴스 단위로 thread-safe가 보장되기 때문이다. 여러 서버가 있다면 여러 개의 인스턴스가 있는 것과 동일하기 때문이다.
   - 실제 운영 서버는 대부분 2개 이상이기 때문에 _synchronized를 잘 사용하지 않는다._
 
-### 해결 방법2) Database Lock 이용해보기
+### ✔  해결 방법2) Database Lock 이용해보기
 1. Pessimistic Lock
    1. 실제로 데이터에 Lock을 걸어서 정합성(Consistency, 데이터가 서로 모순 없이 일관되게 일치해야 함)을 맞춘다.
    2. exclusive lock을 걸게되어 다른 트랜잭션에는 lock이 해제되기 전에 데이터를 가져갈 수 없다.
@@ -118,16 +118,16 @@ public synchronized void decrease(Long id, Long quantity) {
    3. 트랜잭션이 종료될 때 lock이 자동으로 해제되지 않는다. 별도의 명령어를 수행하거나 선점 시간이 지나야 해제된다.
    4. low나 table 단위가 아니라 metadata를 locking한다.
 
-### Pessimistic Lock 구현하기
+### ✔  Pessimistic Lock 구현하기
 StockRepository.java
 ```java
 @Lock(LockModeType.PESSIMISTIC_WRITE)
 @Query("select s from Stock s where s.id = :id")
 Stock findByIdWithPessimisticLock(Long id);
 ```
-별도의 락을 잡기 때문에 성능 감소가 있을 수 있다.
+(별도의 락을 잡기 때문에 성능 감소가 있을 수 있다.)
 
-### Optimistic Lock 구현하기
+### ✔  Optimistic Lock 구현하기
 Stock.java
 ```java
 // 버전 컬럼을 추가해야 한다.
@@ -157,10 +157,10 @@ public void decrease(Long id, Long quantity) throws InterruptedException {
 }
 ```
 
-업데이트를 실패했을 때 재시도 로직을 개발자가 직접 작성해주어야 한다.  
-충돌이 빈번하게 일어나거나 일어날 것으로 예상된다면 적합하지 않다.
+- 업데이트를 실패했을 때 재시도 로직을 개발자가 직접 작성해주어야 한다.  
+- 충돌이 빈번하게 일어나거나 일어날 것으로 예상된다면 적합하지 않다.
 
-### Named Lock 구현하기
+### ✔  Named Lock 구현하기
 - 이름을 가진 락을 획득한 이후에 해제할 때까지 이 이름을 가진 락을 획득할 수 없게 된다.  
 - stock 테이블에 락을 거는 것이 아니라 별도의 공간에 lock을 건다.
 - 데이터 소스를 분리하는 것이 좋다.
@@ -194,13 +194,13 @@ public void decrease(Long id, Long quantity) {
 }
 ```
 
-> **cf. propagation**  
-> @Transactional 사용시에 기본적으로 해당 어노테이션이 걸려있는 메소드나 클래스는 트랜잭션의 성질을 띄게 된다. 그 하위에 또 @Transactional 어노테이션이 걸려있다면, 그 상위의 트랜잭션에 포함되어 움직인다. 이를 제어하는게 @Transactional의 옵션 중에 하나인 propagation이다.  
-> REQUIRES_NEW 옵션은 부모 트랜잭션을 무시하고 무조건 새로운 트랜잭션이 생성되는 것이다.   
-> Default 값인 REQUIRED 옵션은 부모 트랜잭션 내에서 실행하며 부모 트랜잭션이 없을 경우 새로운 트랜잭션을 생성한다.  
+> **참고) Propagation**
+> 1. @Transactional 사용시에 기본적으로 해당 어노테이션이 걸려있는 메소드나 클래스는 트랜잭션의 성질을 띄게 된다. 그 하위에 또 @Transactional 어노테이션이 걸려있다면, 그 상위의 트랜잭션에 포함되어 움직인다. 이를 제어하는게 @Transactional의 옵션 중에 하나인 propagation이다.  
+> 2. REQUIRES_NEW 옵션은 부모 트랜잭션을 무시하고 무조건 새로운 트랜잭션이 생성되는 것이다.   
+> 3. Default 값인 REQUIRED 옵션은 부모 트랜잭션 내에서 실행하며 부모 트랜잭션이 없을 경우 새로운 트랜잭션을 생성한다.  
 > ([참고 블로그](https://m.blog.naver.com/anstnsp/222229118785))
 
-### 해결 방법3) Redis 이용해보기
+### ✔  해결 방법3) Redis 이용해보기
 (두가지 라이브러리)
 - Lettuce
   - setnx 명령어를 활용하여 분산락 구현
@@ -219,13 +219,13 @@ public void decrease(Long id, Long quantity) {
   - 락 획득 재시도를 기본으로 제공한다.
   - _lock을 라이브러리 차원에서 제공해주기 때문에 사용법을 공부해야 한다._
 
-> **cf. spin lock**  
+> **참고) Spin Lock**  
 > lock을 획득하려는 스레드가 lock을 사용할 수 있는지 반복적으로 확인하면서 lock 획득을 시도하는 방법이다.
 
 **(실무에서는) 재시도가 필요하지 않은 lock은 lettuce를 활용하고, 재시도가 필요한 경우에는 redission을 활용한다.**  
 lettuces는 계속 락 획득을 시도하고, redission은 락 해제가 되었을 때 한 번 혹은 몇 번만 시도하기 때문이다.
 
-### Redis 적용하기
+### ✔  Redis 적용하기
 - Redis 의존성 build.gradle에 추가
 ```
 implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -251,7 +251,7 @@ docker run --name myredis -d -p 6379:6379 redis
 
 ![img.png](image/img.png)
 
-### Lettuce를 적용하기
+### ✔  Lettuce를 적용하기
 - MySQL의 NamedLock과 비슷하다.
 - 세션 관리에 신경쓰지 않아도 된다.
 
@@ -307,7 +307,7 @@ public class LettuceLockStockFacade {
 }
 ```
 
-### Redisson 이용하기
+### ✔  Redisson 이용하기
 - build.gradle에 추가하기
 ```
 implementation 'org.redisson:redisson-spring-boot-starter:3.27.2'
@@ -342,7 +342,7 @@ public void decrease(Long id, Long quantity) {
 }
 ```
 
-### MySQL vs Redis
+### ✔  MySQL vs Redis
 - MySQL
   - 별도의 비용이 들지 않는다.
   - 성능이 Redis 만큼은 아니지만 어느정도의 트래픽까지는 문제가 없다.
