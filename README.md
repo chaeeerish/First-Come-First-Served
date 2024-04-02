@@ -166,7 +166,7 @@ public void decrease(Long id, Long quantity) throws InterruptedException {
 - 데이터 소스를 분리하는 것이 좋다.
   - lock 획득에 필요한 connection 1개, transaction에 필요한 connection 1개
 
-![img_1.png](image/img_3.png)
+![img_1.png](image/img_3.png)  
 ([사진출처](https://m.blog.naver.com/fbfbf1/222979238425))  
 
 LockRepository.java
